@@ -1,0 +1,27 @@
+ h3{
+ color: rgb(14, 192, 85);
+ font-style:normal;
+ font-size: 20px;
+}
+h4{
+ color: rgb(255, 12, 12);
+ font-style:normal;
+ font-size: 15px;
+}
+b{
+ font-weight:bolder;
+ color: rgb(218, 31, 31);
+}
+a{
+ text-decoration: none;
+ font-weight: bolder;
+}
+ul{
+ color: rgb(58, 22, 220);
+}
+p{
+  color: rgb(45, 106, 203);
+}
+*{        background-color: rgb(195, 208, 75);
+        cursor: pointer;
+       }
