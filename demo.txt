@@ -76,5 +76,23 @@ def run():
         elif cmd == "CALL always_fail":
             api.always_fail()
 
-
 run()
+
+
+#i/p,o/p
+4 2
+HackerRank Confidential
+CALL sometimes_fail
+CALL always_fail
+DISABLE
+CALL sometimes_fail
+Output
+Attempt 1 failed: Random glitch
+Success after 2 attempts
+Attempt 1 failed: Simulated error
+Attempt 2 failed: Simulated error
+ERROR: all retries failed
+Retry disabled
+ndential
+Attempt 1 failed: Random glitch
+ERROR: all retries faile
