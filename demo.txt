@@ -1,0 +1,80 @@
+class APIfunctions:
+    def __init__(self):
+        self.sometimes_called = 0
+
+    def sometimes_fail(self):
+        self.sometimes_called += 1
+        if self.sometimes_called == 1:
+            raise Exception("Random glitch")
+        return "Success"
+
+    def always_fail(self):
+        raise Exception("Simulated error")
+
+
+class RetryManager:
+    _enabled = True
+
+    @staticmethod
+    def setEnabled(flag: bool):
+        RetryManager._enabled = flag
+        if not flag:
+            print("Retry disabled")
+
+    @staticmethod
+    def isEnabled() -> bool:
+        return RetryManager._enabled
+
+
+def retryable(maxRetries: int):
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+
+            # retry disabled → exactly one try
+            if not RetryManager.isEnabled():
+                try:
+                    return func(*args, **kwargs)
+                except Exception as e:
+                    print(f"Attempt 1 failed: {e}")
+                    print("ERROR: all retries failed")
+                    return None
+
+            attempt = 0
+            while attempt < maxRetries:
+                try:
+                    attempt += 1
+                    result = func(*args, **kwargs)
+                    if attempt > 1:
+                        print(f"Success after {attempt} attempts")
+                    return result
+                except Exception as e:
+                    print(f"Attempt {attempt} failed: {e}")
+                    if attempt == maxRetries:
+                        print("ERROR: all retries failed")
+                        return None
+
+        return wrapper
+    return decorator
+
+
+def run():
+    n, maxRetries = map(int, input().split())
+
+    api = APIfunctions()
+    api.sometimes_fail = retryable(maxRetries)(api.sometimes_fail)
+    api.always_fail = retryable(maxRetries)(api.always_fail)
+
+    for _ in range(n):
+        cmd = input().strip()
+
+        if cmd == "ENABLE":
+            RetryManager.setEnabled(True)
+        elif cmd == "DISABLE":
+            RetryManager.setEnabled(False)
+        elif cmd == "CALL sometimes_fail":
+            api.sometimes_fail()
+        elif cmd == "CALL always_fail":
+            api.always_fail()
+
+
+run()
