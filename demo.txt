@@ -1,98 +1,2825 @@
-class APIfunctions:
-    def __init__(self):
-        self.sometimes_called = 0
+Transaction Decorators 
 
-    def sometimes_fail(self):
-        self.sometimes_called += 1
-        if self.sometimes_called == 1:
-            raise Exception("Random glitch")
-        return "Success"
+import math 
 
-    def always_fail(self):
-        raise Exception("Simulated error")
+import os 
 
+import random 
 
-class RetryManager:
-    _enabled = True
+import re 
 
-    @staticmethod
-    def setEnabled(flag: bool):
-        RetryManager._enabled = flag
-        if not flag:
-            print("Retry disabled")
+import sys 
 
-    @staticmethod
-    def isEnabled() -> bool:
-        return RetryManager._enabled
+#== start==# 
 
+def filter_transactions(f,threshold=50): 
 
-def retryable(maxRetries: int):
-    def decorator(func):
-        def wrapper(*args, **kwargs):
+    def wraper(*a,**k): 
 
-            # retry disabled → exactly one try
-            if not RetryManager.isEnabled():
-                try:
-                    return func(*args, **kwargs)
-                except Exception as e:
-                    print(f"Attempt 1 failed: {e}")
-                    print("ERROR: all retries failed")
-                    return None
+        t = list(*a) 
 
-            attempt = 0
-            while attempt < maxRetries:
-                try:
-                    attempt += 1
-                    result = func(*args, **kwargs)
-                    if attempt > 1:
-                        print(f"Success after {attempt} attempts")
-                    return result
-                except Exception as e:
-                    print(f"Attempt {attempt} failed: {e}")
-                    if attempt == maxRetries:
-                        print("ERROR: all retries failed")
-                        return None
+        data = [(key,val) for key,val in t if val>=threshold or val<0] 
 
-        return wrapper
-    return decorator
+        r = f(data,**k) 
 
+        return r 
 
-def run():
-    n, maxRetries = map(int, input().split())
+    return wraper 
 
-    api = APIfunctions()
-    api.sometimes_fail = retryable(maxRetries)(api.sometimes_fail)
-    api.always_fail = retryable(maxRetries)(api.always_fail)
+def combine_transactions(f): 
 
-    for _ in range(n):
-        cmd = input().strip()
+    def wraper(*a,**k): 
 
-        if cmd == "ENABLE":
-            RetryManager.setEnabled(True)
-        elif cmd == "DISABLE":
-            RetryManager.setEnabled(False)
-        elif cmd == "CALL sometimes_fail":
-            api.sometimes_fail()
-        elif cmd == "CALL always_fail":
-            api.always_fail()
+        t = list(*a) 
 
-run()
+        d={} 
 
+        for key,val in t: 
 
-#i/p,o/p
-4 2
-HackerRank Confidential
-CALL sometimes_fail
-CALL always_fail
-DISABLE
-CALL sometimes_fail
-Output
-Attempt 1 failed: Random glitch
-Success after 2 attempts
-Attempt 1 failed: Simulated error
-Attempt 2 failed: Simulated error
-ERROR: all retries failed
-Retry disabled
-ndential
-Attempt 1 failed: Random glitch
-ERROR: all retries faile
+            if key not in d: 
+
+                d[key]=val 
+
+            else: 
+
+                d[key]+=val 
+
+        r = f(d,**k) 
+
+        return r 
+
+    return wraper 
+
+def sort_transactions(f): 
+
+    def wraper(*a,**k): 
+
+        t = dict(*a) 
+
+        data = list(sorted(t.items(),key=lambda x:(-x[1]))) 
+
+        r = f(data,**k) 
+
+        return r 
+
+    return wraper 
+
+#===end==# 
+
+if __name__ == '__main__': 
+
+    fptr = open (os.environ ['OUTPUT PATH'], 'w') 
+
+    n = int (input()) 
+
+    transactions = [] 
+
+    for i in range(n): 
+
+        transaction = input().split(' ') 
+
+        transactions.append ((transaction[0], int (transaction[1]))) 
+
+    @filter_transactions 
+
+    @combine_transactions 
+
+    @sort_transactions 
+
+    def display_total_transactions(transactions): 
+
+        #==strt==# 
+
+        for lis in transactions: 
+
+            total_amount = lis[1] 
+
+            amount_str=f"${total_amount}" if total_amount>=0 else f"-${total_amount*-1}" 
+
+            if lis != transactions [-1]: 
+
+                fptr.write(f"{lis[0]}: {amount_str}\n") 
+
+            else: 
+
+                fptr.write(f"{lis[0]}: {amount_str}" 
+
+        #===end==# 
+
+        display_total_transactions (transactions) 
+
+        fptr.close() from operator import itemgetter 
+
+ 
+
+Enhanced Date and Time Extractor 
+
+import re 
+
+import os 
+
+from datetime import datetime 
+
+class InvalidDateFormat(Exception): 
+
+    pass 
+
+class InvalidMonthName(Exception): 
+
+    pass 
+
+def extract_datetime(dateTimeString): 
+
+#Write your code here 
+
+    regex_pattern={ 
+
+        "%Y-%m-%d %H:%M:%S":r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$", 
+
+        "%Y/%m/%d %H:%M:%S":r"^\d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2}$", 
+
+        "%d %b %Y %H:%M:%S":r"^\d{1,2} [A-Za-z]{3} \d{4} \d{2}:\d{2}:\d{2}$", 
+
+        "%d %B %Y %H:%M:%S":r"^\d{1,2} [A-Za-z]+ \d{4} \d{2}:\d{2}:\d{2}$" 
+
+    } 
+
+    for fmt,pattern in regex_pattern.items(): 
+
+        if re.match(pattern,dateTimeString): 
+
+            try: 
+
+                dt=datetime.strptime(dateTimeString,fmt) 
+
+                return f"Year: {dt.year}, Month: {dt.month}, Day: {dt.day}, Hour: {dt.hour}, Minute: {dt.minute}, Second: {dt.second}" 
+
+            except ValueError: 
+
+                if "%B" in fmt or "%b" in fmt: 
+
+                    raise InvalidMonthName("Invalid Month Name") 
+
+            raise InvalidDateFormat("Invalid date or time values") 
+
+    raise InvalidDateFormat("Invalid date and time format") 
+
+# Ends here 
+
+if __name__ == '__main__': 
+
+    fptr = open(os.environ['OUTPUT_PATH'], 'w') 
+
+    try: 
+
+        dateTimeString = input() 
+
+        result = extract_datetime(dateTimeString) 
+
+        fptr.write(result) 
+
+    except InvalidDateFormat as e: 
+
+        fptr.write(str(e)) 
+
+    except InvalidMonthName as e: 
+
+        fptr.write(str(e)) 
+
+    fptr.close() 
+
+CSS Hex color code matcher 
+
+import re 
+
+import os 
+
+def css_hex_color_code_matcher(s): 
+
+    comment_pattren = r"/\*.*?\*/" 
+
+    modify_text = re.sub(comment_pattren,'',s) 
+
+    hex_color_pattren = r"#[0-9a-fA-F]{3}\b|#[0-9a-fA-F]{6}\b"   
+
+    matched_color_codes = re.findall(hex_color_pattren,modify_text) 
+
+    return modify_text,matched_color_codes 
+
+if __name__ == "__main__": 
+
+    fptr = open (os.environ ['OUTPUT PATH'],'w') 
+
+    text = input() 
+
+    modified_text, matched_hex_color_codes = css_hex_color_code_matcher(text) 
+
+    fptr.write ("Modified Text: " + modified_text) 
+
+    fptr.write("\n") 
+
+    sorted_array = sorted (matched_hex_color_codes) 
+
+    space_separated_values =' '.join(map (str, sorted_array)) 
+
+    fptr.write("Matched Hex Color Codes: " + space_separated_values) 
+
+    fptr.close() 
+
+ 
+
+Frequency Calculator 
+
+import os 
+
+from collections import Counter 
+
+import re 
+
+def get_top_letters_and_words(n, num): 
+
+    # Code starts here 
+
+text=text.lower() 
+
+text_clean=re.sub(r"[^a-z0-9\s]"," ",text) 
+
+    word_count=Counter(text_clean.split()) 
+
+    letter=[ch for ch in text_clean if ch.isalnum()] 
+
+    letter_Count=Counter(letter) 
+
+    sorted_word=sorted(word_count.items(),key=lambda x:(-x[1],x[0])) 
+
+    sorted_letter=sorted(letter_Count.items(),key=lambda x:(-x[1],x[0])) 
+
+    top_words=sorted_word[:num] 
+
+    top_letters=sorted_letter[:num] 
+
+    result_letter=f"Top {num} letters:\n"+"\n".join(f"{m}: {n}"for m,n in top_letters) 
+
+    result_word=f"\nTop {num} words:\n"+"\n".join(f"{m}: {n}"for m,n in top_words) 
+
+    return result_letter,result_word 
+
+# Code ends here 
+
+if __name__ == "__main__": 
+
+    fptr = open(os.environ['OUTPUT_PATH'], 'w') 
+
+    text = input() 
+
+    num = int(input()) 
+
+    letters,words = get_top_letters_and_words(text,num) 
+
+    fptr.write(letters) 
+
+    fptr.write("\n") 
+
+    fptr.write(words) 
+
+    fptr.close() 
+
+   
+
+User permission Management 
+
+import os 
+
+def permission_closure(): 
+
+    # In the pre built code they mentioned action's in list. Just change the braces. 
+
+    permissions = { 
+
+        'admin': {'read', 'write', 'delete'}, 
+
+        'editor': {'read', 'write'}, 
+
+        'viewer': {'read'}, 
+
+    } 
+
+    # Code starts here 
+
+ 
+
+    def check_permissions(user_role, action): 
+
+        return action in permissions.get(user_role, set()) 
+
+    return check_permissions 
+
+  
+
+check_permission = permission_closure() 
+
+# Ends here 
+
+def authorize(fun):   
+
+    # Code starts here 
+
+    def wrapper(self, *args): 
+
+        action = fun.__name__ 
+
+        if not check_permission(self.role, action): 
+
+            raise PermissionError( 
+
+                f"Permission denied for {self.role} to perform {action} action." 
+
+            ) 
+
+        return fun(self, *args) 
+
+    return wrapper 
+
+# Ends here 
+
+class AuthorizedActions: 
+
+    def __init__(self, role): 
+
+        self.role = role 
+
+    @authorize 
+
+    def read(self, detail, data): 
+
+        fptr.write("Data is: "+data) 
+
+        fptr.write("\n") 
+
+        return data 
+
+    @authorize 
+
+    def write(self, text, data): 
+
+        data+=text 
+
+        fptr.write("Data updated") 
+
+        fptr.write("\n") 
+
+        return data 
+
+    @authorize 
+
+    def delete(self, length, data): 
+
+        if int(length)>len(data): 
+
+            data="" 
+
+        else: 
+
+            data=data[:-length] 
+
+        fptr.write("Data deleted") 
+
+        fptr.write("\n") 
+
+        return data 
+
+if __name__ == "__main__": 
+
+    data = "" 
+
+    fptr = open(os.environ['OUTPUT_PATH'], 'w') 
+
+    num = int(input()) 
+
+    for i in range(num): 
+
+        name, role = input().split(':') 
+
+        detail='' 
+
+        action = input() 
+
+        if action!="read": 
+
+            action, detail = action.split(':') 
+
+        authorized_actions = AuthorizedActions(role=role) 
+
+        actions = { 
+
+            "read": authorized_actions.read, 
+
+            "write": authorized_actions.write, 
+
+            "delete": authorized_actions.delete 
+
+        } 
+
+        try: 
+
+            data = actions.get(action)(detail, data) 
+
+        except PermissionError as e: 
+
+            fptr.write(f"{str(e)}") 
+
+            fptr.write("\n") 
+
+    fptr.close() 
+
+Library catalog system 
+
+import os 
+
+from typing import Dict, Type 
+
+class Item: 
+
+    def __init__(self, title: str, author: str, year: int) -> None: 
+
+        # Ensure year is treated as an integer even if provided as a string 
+
+        self.title = title 
+
+        self.author = author 
+
+        self.year = int(year) 
+
+    def __str__(self) -> str: 
+
+        # A one-line human-readable summary 
+
+        return f"{self.title} by {self.author} ({self.year})\n" 
+
+    def __repr__(self) -> str: 
+
+        # A debug representation 
+
+        return f"Item: {self.title} by {self.author} ({self.year})" 
+
+    def display_info(self) -> str: 
+
+        # Base details block 
+
+return f"Title: {self.title}\nAuthor: {self.author}\nYear: {self.year}"  
+
+class Book(Item): 
+
+    def __init__(self, title, author, year, genre, ISBN): 
+
+        # Properly initialize base class attributes 
+
+        self.title=title 
+
+        self.author=author 
+
+        self.year=year 
+
+        self.genre = genre 
+
+        self.ISBN = ISBN 
+
+    def display_info(self): 
+
+        return f"Title: {self.title}\nAuthor: {self.author}\nYear: {self.year}\nGenre: {self.genre}\nISBN: {self.ISBN}\n" 
+
+class DVD(Item): 
+
+    def __init__(self, title, author, year, duration): 
+
+        self.title=title 
+
+        self.author=author 
+
+        self.year=year 
+
+        self.duration =duration 
+
+    def display_info(self): 
+
+         return f"Title: {self.title}\nAuthor: {self.author}\nYear: {self.year}\nDuration: {self.duration} minutes\n" 
+
+def main(path) -> None: 
+
+    fptr = open(path, 'w') 
+
+    object_classes = { 
+
+        "Book": Book, 
+
+        "DVD": DVD 
+
+    } 
+
+    num = int(input()) 
+
+    for i in range(num):   
+
+        input_str = input() 
+
+        object_type, *values = [inp.strip() for inp in input_str.split(",")] 
+
+        item = object_classes[object_type](*values) 
+
+        fptr.write("--- Item Information ---\n") 
+
+        fptr.write(str(item)) 
+
+        fptr.write(item.display_info()) 
+
+        fptr.write("\nDetails:\n") 
+
+        attributes = vars(item) 
+
+        for key, value in attributes.items(): 
+
+            if key != "ISBN": 
+
+                key = key.capitalize() 
+
+            fptr.write(f"{key}: {value}") 
+
+            fptr.write("\n") 
+
+        fptr.write("\n") 
+
+    fptr.close() 
+
+if __name__ == "__main__": 
+
+    env_var = "OUTPUT_PATH" 
+
+    path = os.environ[env_var] if env_var in os.environ.keys() else "/dev/stdout" 
+
+    main(path) 
+
+Bank vault access manager 
+
+import os 
+
+class VaultAccessControl: 
+
+    def __init__(self,authorized_employees,all_employees): 
+
+        self.authorized_employees=set(authorized_employees) 
+
+        self.all_employees=set(all_employees) 
+
+        self.access_granted=None # Stores employee ID if access is active 
+
+    def grant_access(self,employee_id): 
+
+        if employee_id not in self.all_employees: 
+
+            raise ValueError(f"Unauthorized access. Employee ID {employee_id} not recognized.") 
+
+        if employee_id not in self.authorized_employees: 
+
+            raise ValueError(f"Unauthorized access. Employee ID {employee_id} not authorized to access the vault.") 
+
+        self.access_granted=employee_id 
+
+        return True 
+
+    def release_access(self): 
+
+        self.access_granted=None 
+
+class BankVaultAccessManager: 
+
+    def __init__(self,employee_id,access_control): 
+
+        self.employee_id=employee_id 
+
+        self.access_control=access_control 
+
+        self.access=False 
+
+    def __enter__(self): 
+
+        if self.access_control.grant_access(self.employee_id): 
+
+            self.access=True 
+
+        return self 
+
+    def __exit__(self,exc_type,exc_value,trackback): 
+
+        self.access_control.release_access() 
+
+        if not self.access: 
+
+            raise ValueError(f"Unauthorized access. Emplyee ID {self.employee_id} failed to access the vault.") 
+
+        return False # Don't suppress exceptions 
+
+    def perform_activity(self,activity): 
+
+        if not self.access: 
+
+            raise ValueError(f"Unauthorised access. Employee ID {self.employee_id} not authorised to perform activities.") 
+
+        return f"Authorized Access for {self.employee_id}. Performed activity inside the bank vault: {activity}"   
+
+if __name__ == "__main__": 
+
+    fptr = open(os.environ['OUTPUT_PATH'], 'w') 
+
+    n = int(input()) 
+
+    all_employees_input = input() 
+
+    all_employees = [emp.strip() for emp in all_employees_input.split(",")] 
+
+    m = int(input()) 
+
+    authorized_employees_input = input() 
+
+    authorized_employees = [emp.strip() for emp in authorized_employees_input.split(",")] 
+
+    access_control = VaultAccessControl(authorized_employees, all_employees) 
+
+    q = int(input()) 
+
+    users_input = input() 
+
+    users = [user.strip() for user in users_input.split(",")]     
+
+    for user in users: 
+
+        try: 
+
+            with BankVaultAccessManager(user, access_control) as vault: 
+
+                result = vault.perform_activity("Counting cash") 
+
+                fptr.write(result) 
+
+                fptr.write('\n') 
+
+        except ValueError as e: 
+
+            fptr.write(f"Error occurred: {str(e)}”) 
+
+            Fptr.write(‘\n’) 
+
+Fptr.close() 
+
+Banking  Transaction Exception 
+
+import os 
+
+import sys 
+
+class InsufficientFundsError(Exception): 
+
+    def __init__(self, amount, balance): 
+
+        self.amount = amount 
+
+        self.balance = balance 
+
+        self.status_code = 400 
+
+        self.message = f"Not enough funds to withdraw {amount}. Current balance: {balance}" 
+
+        super().__init__(self.message) 
+
+  
+
+class InvalidTransactionType(Exception): 
+
+    def __init__(self, ttype): 
+
+        self.status_code = 400 
+
+        self.message = ( 
+
+            
+
+def __init__(self,transaction_amount): 
+
+ 
+
+        ) 
+
+        super().__init__(self.message) 
+
+class Transaction: 
+
+    def __init__(self, transaction_type, amount, balance): 
+
+        self.transaction_type = transaction_type 
+
+        self.amount = amount 
+
+        self.balance = balance 
+
+    def __str__(self): 
+
+        return f"Type: {self.transaction_type}, Amount: {self.amount}, Balance: {self.balance}" 
+
+class BankAccount: 
+
+    def __init__(self, initial_balance): 
+
+        self.balance = float(initial_balance) 
+
+        self.history = [] 
+
+    def _record(self, ttype, amount): 
+
+        self.history.append(Transaction(ttype, amount, self.balance)) 
+
+    def process_transaction(self, transaction_amount, transaction_type): 
+
+        t = transaction_type.strip().lower() 
+
+        if t == "deposit": 
+
+            amt = float(transaction_amount) 
+
+            self.balance += amt 
+
+            self._record("deposit", amt) 
+
+            return [ 
+
+                "Transaction successful!", 
+
+                f"Updated account balance: {self.balance}" 
+
+            ] 
+
+        if t == "withdraw": 
+
+            amt = float(transaction_amount) 
+
+            if amt > self.balance: 
+
+                raise InsufficientFundsError(amt, self.balance) 
+
+            self.balance -= amt 
+
+            self._record("withdraw", amt) 
+
+            return [ 
+
+                "Transaction successful!", 
+
+                f"Updated account balance: {self.balance}" 
+
+            ] 
+
+        if t == "view_transaction_history": 
+
+            return [str(txn) for txn in self.history] 
+
+        raise InvalidTransactionType(transaction_type) 
+
+if __name__ == '__main__': 
+
+    fptr = open(os.environ['OUTPUT_PATH'], 'w') 
+
+    account = BankAccount(1500.0) 
+
+    no_of_transactions = int(input())  
+
+    while no_of_transactions > 0: 
+
+        try: 
+
+            transaction_type = input().strip() 
+
+            transaction_amount = None 
+
+            if transaction_type == "deposit" or transaction_type == "withdraw": 
+
+                transaction_amount = input().strip() 
+
+            result = account.process_transaction(transaction_amount, transaction_type) 
+
+            if transaction_type == "view_transaction_history": 
+
+                for transaction in result: 
+
+                    fptr.write(str(transaction)+ "\n")   
+
+            else: 
+
+                for item in result: 
+
+                    fptr.write(item +"\n") 
+
+        except (InsufficientFundsError, InvalidTransactionType) as e: 
+
+            fptr.write(f"Error ({e.status_code}): {e.message}\n") 
+
+        except Exception as e: 
+
+            fptr.write(f"An unexpected error occurred: {e}\n") 
+
+        no_of_transactions -= 1 
+
+Secure login system 
+
+def login_system(login_attempts): 
+
+    def secure_login(username, password): 
+
+        if username in users and users[username] == password: 
+
+            login_attempts['success'] += 1 
+
+            return f"Welcome, {username}!" 
+
+        else: 
+
+            login_attempts['failed'] += 1 
+
+            return f"Failed login attempt for {username}" 
+
+    def get_login_attempts(): 
+
+        return login_attempts 
+
+    return secure_login, get_login_attempts 
+
+def check_credentials(username, password): 
+
+    return username in users and users[username] == password 
+
+if __name__ == "__main__": 
+
+    fptr = open(os.environ['OUTPUT_PATH'], 'w') 
+
+    login_attempts = {'success': 0, 'failed': 0}  # Initialize login attempt counts 
+
+    num_all = int(input()) 
+
+    users = {} 
+
+    for i in range(num_all): 
+
+        user, pwd = input().split(',') 
+
+        users[user] = pwd 
+
+    num = int(input()) 
+
+    login, get_attempts = login_system(login_attempts) 
+
+    for i in range(num): 
+
+        user, password = input().split(",") 
+
+        fptr.write(login(user, password) + "\n") 
+
+    attempts = get_attempts() 
+
+    fptr.write(f"Login Attempts - Successful: {attempts['success']} Failed: {attempts['failed']}") 
+
+    fptr.close() 
+
+Weather forecasting service 
+
+import os 
+
+from enum import Enum 
+
+# Enter only the implementation code of WeatherService class and custom exception classes here. 
+
+class TemperatureOutOfRange(Exception): 
+
+    pass 
+
+class InvalidTemperatureData(Exception): 
+
+    pass 
+
+class InvalidForecastData(Exception): 
+
+    pass 
+
+class InvalidCityName(Exception): 
+
+    pass 
+
+class WeatherService: 
+
+    @staticmethod 
+
+    def weather_data_enum(data): 
+
+        weather_enum = {} 
+
+        for city, details in data.items(): 
+
+            weather_enum[city] = details 
+
+        return weather_enum 
+
+    @staticmethod 
+
+    def process_weather_data(WeatherData, city, query): 
+
+        query_lower = query.lower() 
+
+        city_stripped = city.strip() 
+
+        if city_stripped not in WeatherData: 
+
+            raise InvalidCityName(f"Invalid city name {city_stripped}") 
+
+        city_data = WeatherData[city_stripped] 
+
+        if query_lower == 'temperature': 
+
+            weather_value = city_data.get('temperature') 
+
+            if not weather_value: 
+
+                raise InvalidTemperatureData (f"Invalid or missing {query_lower} data") 
+
+            try: 
+
+                temp_val = int(weather_value) 
+
+                if not (-20 <= temp_val <= 50): 
+
+                    raise TemperatureOutOfRange(f"Temperature {temp_val} is out of range") 
+
+                return f"The {query_lower} for {city_stripped} is {temp_val}" 
+
+            except ValueError: 
+
+                raise InvalidTemperatureData (f"Invalid or missing {query_lower} data") 
+
+        elif query_lower == 'forecast': 
+
+            weather_value = city_data.get('forecast') 
+
+            if not weather_value: 
+
+                raise InvalidForecastData(f"Invalid or missing {query_lower} data") 
+
+           	 return f"The {query_lower} for {city_stripped} is {weather_value}" 
+
+        else: 
+
+            return f"Unknown query type: {query}" 
+
+def main(path) -> None: 
+
+    result = [] 
+
+    num = int(input()) 
+
+    data = {} 
+
+    while (num := num - 1) >= 0: 
+
+        city, *weather_data = input().split(",") 
+
+        data[city] = { 
+
+            "temperature": int(weather_data[0]) if weather_data[0] not in ['', ' ', None] else None, 
+
+            "forecast": weather_data[1] if weather_data[1] not in ['', ' ', None] else None 
+
+        } 
+
+    WeatherData = WeatherService.weather_data_enum(data) 
+
+    num_locations = int(input()) 
+
+    while (num_locations := num_locations - 1) >= 0: 
+
+        city, query = input().split(",") 
+
+        try: 
+
+            result.append(WeatherService.process_weather_data(WeatherData, city, query)) 
+
+        except (InvalidForecastData, InvalidTemperatureData, TemperatureOutOfRange, InvalidCityName) as e: 
+
+            result.append(f"Error: {e}") 
+
+    with open(path, "w") as fptr: 
+
+        fptr.write("\n".join(result)) 
+
+if __name__ == "__main__": 
+
+    env_var = "OUTPUT_PATH" 
+
+    path = os.environ[env_var] if env_var in os.environ.keys() else "/dev/stdout" 
+
+    main(path) 
+
+ 
+
+ 
+
+ 
+
+Book popularity tracker 
+
+#!/bin/python3 
+
+import math 
+import os 
+import random 
+import re 
+import sys 
+
+class Book: 
+     def __init__(self, title,genre,rating): 
+         self.title=title 
+         self.genre=genre 
+         self.rating= rating 
+class LibraryManagement: 
+     def __init__(self): 
+         self.inventory=[] 
+     def add_book(self,book:Book): 
+         self.inventory.append(book) 
+     def get_highest_rated_books(self,x:int): 
+         sorted_books=sorted(self.inventory,key=lambda b: (b.rating,b.title),reverse=True) 
+         return sorted_books[:x] 
+     def recommend_top_book_by_genre(self,genre:str): 
+         genre_books=[b for b in self.inventory if b.genre==genre] 
+         if not genre_books: 
+             return None 
+         genre_books.sort(key=lambda b:(b.rating,b.title),reverse=True) 
+         return genre_books[0] 
+def main(path) -> None: 
+     fptr = open(path, 'w') 
+     num = int(input()) 
+     library = LibraryManagement() 
+     for i in range(num): 
+         title, genre, rating = input().split(",") 
+         library.add_book(Book(title, genre, float(rating))) 
+ 
+     recommended_count = int(input()) 
+     genre = input() 
+ 
+     highest_rated_books = library.get_highest_rated_books(recommended_count) 
+     book_by_genre = library.recommend_top_book_by_genre(genre) 
+ 
+     for book in highest_rated_books: 
+         fptr.write(f"Highest Rated Book: {book.title}, Rating: {book.rating}\n" 
+
+    if book_by_genre: 
+         fptr.write(f"Top Recommended Book in Programming Genre: {book_by_genre.title}, Rating: {book_by_genre.rating}\n") 
+     else: 
+         fptr.write("No books found in the specified genre.\n") 
+     fptr.close() 
+
+if __name__ == "__main__": 
+     env_var = "OUTPUT_PATH" 
+     path = os.environ[env_var] if env_var in os.environ.keys() else "/dev/stdout" 
+     main(path) 
+
+   
+
+Event reservation 
+
+from abc import ABC, abstractmethod 
+
+from typing import NamedTuple 
+
+from typing import Dict,Set 
+
+class IBookingService(ABC): 
+
+    @abstractmethod 
+
+    def start_booking_process(self, event_id: int, user_id: int) -> bool: 
+
+        pass 
+
+    @abstractmethod 
+
+    def confirm_booking_status(self, event_id: int, user_id: int, booking_successful: bool) -> 'BookingConclusion': 
+
+        pass 
+
+class IRepo(ABC): 
+
+    @abstractmethod 
+
+    def register_event_in_auditorium(self, auditorium_number: int, event_id: int, capacity: int) -> None: 
+
+        pass 
+
+    @abstractmethod 
+
+    def get_auditorium_details_for_event(self, event_id: int) -> 'Auditorium': 
+
+        pass 
+
+    @abstractmethod 
+
+    def get_number_of_seats_books_or_under_booking_for_event(self, event_id: int) -> int: 
+
+        pass 
+
+    @abstractmethod 
+
+    def add_under_booking(self, event_id: int, user_id: int) -> None: 
+
+        pass 
+
+    @abstractmethod 
+
+    def remove_under_booking(self, event_id: int, user_id: int) -> None: 
+
+        pass 
+
+    @abstractmethod 
+
+    def add_successful_booking(self, event_id: int, user_id: int) -> None: 
+
+        pass 
+
+class BookingConclusion(NamedTuple): 
+
+    is_successful: bool 
+
+    auditorium_number: int 
+
+class Auditorium(NamedTuple): 
+
+    auditorium_number: int 
+
+    event_id: int 
+
+    capacity: int 
+
+# Body 
+
+class BookingService(IBookingService): 
+
+    def __init__(self, repo: IRepo) -> None: 
+
+        self.repo = repo 
+
+    def start_booking_process(self, event_id: int, user_id: int) -> bool: 
+
+        a=self.repo.get_auditorium_details_for_event(event_id) 
+
+  c=self.repo.get_number_of_seats_books_or_under_booking_for_event(event_id) 
+
+        if c<a.capacity: 
+
+            self.repo.add_under_booking(event_id,user_id) 
+
+            return True 
+
+        return False 
+
+    def confirm_booking_status(self, event_id: int, user_id: int, booking_successful: bool) -> BookingConclusion: 
+
+        self.repo.remove_under_booking(event_id,user_id) 
+
+        auditorium=self.repo.get_auditorium_details_for_event(event_id) 
+
+        if booking_successful: 
+
+            self.repo.add_successful_booking(event_id,user_id) 
+
+            return BookingConclusion(True,auditorium.auditorium_number) 
+
+        return BookingConclusion(False,auditorium.auditorium_number) 
+
+class Repo(IRepo): 
+
+    def __init__(self) -> None: 
+
+        self.event_to_auditorium:Dict[int,Auditorium]={} 
+
+        self.under_booking:Dict[int,Set[int]]={} 
+
+        self.successful_booking:Dict[int,Set[int]]={} 
+
+    def register_event_in_auditorium(self, auditorium_number: int, event_id: int, capacity: int) -> None: 
+
+  self.event_to_auditorium[event_id]=Auditorium(auditorium_number,event_id,capacity) 
+
+        self.under_booking[event_id]=set() 
+
+        self.successful_booking[event_id]=set() 
+
+    def get_number_of_seats_books_or_under_booking_for_event(self, event_id: int) -> int: 
+
+        return len(self.under_booking[event_id])+len(self.successful_booking[event_id])  
+
+    def add_under_booking(self, event_id: int, user_id: int) -> None: 
+
+        self.under_booking[event_id].add(user_id) 
+
+    def remove_under_booking(self, event_id: int, user_id: int) -> None: 
+
+        self.under_booking[event_id].discard(user_id) 
+
+    def add_successful_booking(self, event_id: int, user_id: int) -> None: 
+
+        self.successful_booking[event_id].add(user_id) 
+
+    def get_auditorium_details_for_event(self, event_id: int) -> Auditorium: 
+
+        return self.event_to_auditorium[event_id] 
+
+# Tail 
+
+if __name__ == "__main__": 
+
+    total_number_of_auditoriums = int(input().strip()) 
+
+    event_id_in_auditorium = list(map(int, input().split())) 
+
+    capacity_of_auditorium = list(map(int, input().split())) 
+
+    repo = Repo() 
+
+    for i in range(total_number_of_auditoriums): 
+
+        repo.register_event_in_auditorium(i, event_id_in_auditorium[i], capacity_of_auditorium[i]) 
+
+    booking_service = BookingService(repo) 
+
+    total_number_of_requests = int(input().strip()) 
+
+    for request_number in range(1, total_number_of_requests + 1): 
+
+        query, *inp = input().split() 
+
+        even_id, user_id = map(int, inp[0:2]) 
+
+        if query == "startBookingProcess": 
+
+            did_start_booking_process = booking_service.start_booking_process(even_id, user_id) 
+
+            if did_start_booking_process : 
+
+                print("true") 
+
+            else : 
+
+                print("false")     
+
+        elif query == "confirmBookingStatus": 
+
+            is_successful_booking = inp[2].lower() == "true" 
+
+            booking_conclusion = booking_service.confirm_booking_status(even_id, user_id, is_successful_booking) 
+
+            if booking_conclusion == None: 
+
+                print("Booking not initiated") 
+
+            else :     
+
+                print(f"{'successful' if booking_conclusion.is_successful else 'failed'} {booking_conclusion.auditorium_number}") 
+
+Menu recommendation 
+
+from abc import ABC, abstractmethod 
+
+class MenuItem: 
+     def __init__(self, itemid, displayName): 
+         self.itemid = itemid 
+         self.displayName = displayName 
+         self.sumOfRating = 0 
+         self.numberOfPeopleWhoRatedIt = 0 
+         self.inStock = True 
+         self.isDeal = False 
+ 
+class IMenuRecommendation(ABC): 
+ 
+     @abstractmethod 
+     def addItem(self, id, displayName): 
+         pass 
+ 
+     @abstractmethod 
+     def getRecommendedItem(self): 
+         pass 
+ 
+     @abstractmethod 
+     def outOfStockItem(self, itemid): 
+         pass 
+ 
+     @abstractmethod 
+     def restockItem(self, itemid): 
+         pass 
+ 
+     @abstractmethod 
+     def makeDealOfTheDayItem(self, itemid): 
+         pass 
+ 
+     @abstractmethod 
+     def rateItem(self, itemid, rating): 
+         pass 
+ 
+
+class MenuRecommendation(IMenuRecommendation): 
+#Code starts here 
+ 
+     def __init__(self): 
+         self.menu_items = {} 
+         self.deal_of_the_day = None 
+ 
+     def addItem(self, id, displayName): 
+         self.menu_items[id] = MenuItem(id, displayName) 
+ 
+     def getRecommendedItem(self): 
+         if self.deal_of_the_day is not None: 
+             item = self.menu_items.get(self.deal_of_the_day) 
+             if item and item.inStock: 
+                 return item 
+
+        candidates = [i for i in self.menu_items.values() if i.inStock] 
+         if not candidates: 
+             return None 
+ 
+         candidates.sort( 
+             key=lambda x: ( 
+                 -(x.sumOfRating / x.numberOfPeopleWhoRatedIt 
+                   if x.numberOfPeopleWhoRatedIt != 0 else 0), 
+                 x.itemid 
+             ) 
+         ) 
+         return candidates[0] 
+ 
+     def outOfStockItem(self, itemid): 
+         item = self.menu_items.get(itemid) 
+         if item: 
+             item.inStock = False 
+             if item.isDeal: 
+                 item.isDeal = False 
+                 self.deal_of_the_day = None 
+ 
+     def restockItem(self, itemid): 
+         item = self.menu_items.get(itemid) 
+         if item: 
+             item.inStock = True 
+ 
+     def makeDealOfTheDayItem(self, itemid): 
+         item = self.menu_items.get(itemid) 
+         if item and item.inStock: 
+             if self.deal_of_the_day is not None: 
+                 prev = self.menu_items.get(self.deal_of_the_day) 
+                 if prev: 
+                     prev.isDeal = False 
+             self.deal_of_the_day = itemid 
+             item.isDeal = True 
+ 
+     def rateItem(self, itemid, rating): 
+         item = self.menu_items.get(itemid) 
+         if item: 
+             item.sumOfRating += rating 
+             item.numberOfPeopleWhoRatedIt += 1 
+#Ends here 
+ 
+if __name__ == "__main__": 
+ 
+     total_number_of_requests = int(input().strip()) 
+     menu_recommendation = MenuRecommendation() 
+ 
+     for _ in range(total_number_of_requests): 
+         arr = input().strip().split() 
+         command = arr[0] 
+ 
+         if command == "addItem": 
+             menu_recommendation.addItem(int(arr[1]), arr[2]) 
+ 
+         elif command == "getRecommendedItem": 
+             menu_item = menu_recommendation.getRecommendedItem() 
+             if menu_item is None: 
+                 print("N/A") 
+             else: 
+                 avg = ( 
+                     0 if menu_item.numberOfPeopleWhoRatedIt == 0 
+                     else menu_item.sumOfRating / menu_item.numberOfPeopleWhoRatedIt 
+                 ) 
+                 print(f"{menu_item.itemid} {menu_item.displayName} Rating: {avg}") 
+ 
+         elif command == "outOfStockItem": 
+             menu_recommendation.outOfStockItem(int(arr[1])) 
+ 
+         elif command == "restockItem": 
+             menu_recommendation.restockItem(int(arr[1])) 
+ 
+         elif command == "makeDealOfTheDayItem": 
+             menu_recommendation.makeDealOfTheDayItem(int(arr[1])) 
+ 
+         elif command == "rateItem": 
+             menu_recommendation.rateItem(int(arr[1]), int(arr[2])) 
+
+   
+
+DB context 
+
+class database_context_manager: 
+
+    def __init__(self,username): 
+
+        self.username=username 
+
+        self.db=Database() 
+
+        self.connection_string=None 
+
+    def __enter__(self): 
+
+        self.connection_string=self.db._init_db(self.username) 
+
+        return self.connection_string 
+
+    def __exit__(self,exc_type,exc_val,exc_tb): 
+
+        self.db._close_db(self.connection_string) 
+
+if __name__ == '__main__': 
+
+    username: str = input() 
+
+    Database.inputString = username 
+
+    with database_context_manager(username) as dbSimulator: 
+
+        fptr.write('Database running...\n') 
+
+    tc: int = Database.totalCount 
+
+    cnt1: int = Database.count1 
+
+    cnt2: int = Database.count2 
+
+    if cnt1 != 1 or cnt2 != 1 or tc != 2: 
+
+        fptr.write('Functions not correctly called\n') 
+
+    fptr.close() 
+
+Mixins 
+
+import math 
+import os 
+import random 
+import re 
+import sys 
+
+import json 
+# 
+# Complete the 'DictMixin' and 'JSONMixin' class below. 
+# 
+# The class 'DictMixin' should cotain the following method: 
+#  1. to_dict 
+#  
+# The class 'JSONMixin' should cotain the following method: 
+#  1. to_json 
+# 
+
+  
+
+class DictMixin: 
+     # Write your code here 
+
+    #Code starts here 
+     def to_dict(self): 
+         result = {} 
+         for key, value in self. __dict__. items(): 
+             if not key.startswith('_'): 
+                 result[key] = value 
+         return result 
+     #Ends here 
+class JSONMixin: 
+     # Write your code here 
+
+#Code starts here 
+     def to_json(self): 
+         data = {} 
+         for key, value in self.__dict__.items(): 
+             if not key.startswith('_'): 
+                 # JSON supports only basic data types 
+                 if isinstance(value, (int, float, str, bool)) or value is None: 
+                     data[key] = value 
+                 else: 
+                     raise TypeError("Object is not JSON serializable") 
+         return json.dumps(data) 
+     #Ends here 
+class MyClass(DictMixin, JSONMixin): 
+     def __init__(self, name, data, secret): 
+         self.name = name 
+         self.data = data 
+         self._secret = secret 
+ 
+class MyClass1(DictMixin): 
+     def __init__(self, name, data, secret): 
+         self.name = name 
+         self.data = data 
+         self._secret = secret 
+class MyClass2(JSONMixin): 
+     def __init__(self, name, data, secret): 
+         self.name = name 
+         self.data = data 
+         self._secret = secret 
+
+if __name__ == "__main__": 
+     fptr = open(os.environ["OUTPUT_PATH"], "w") 
+
+    name = input() 
+
+    dataType = input() 
+
+    if dataType == "int": 
+         data = int(input().strip()) 
+     else: 
+         data_count = int(input().strip()) 
+
+        data = [] 
+
+        for _ in range(data_count): 
+             data_item = int(input().strip()) 
+             data.append(data_item) 
+         data.sort() 
+         data = set(data) 
+
+    secret = input() 
+
+    obj = MyClass(name, data, secret) 
+     obj1 = MyClass1(name, data, secret) 
+     obj2 = MyClass2(name, data, secret) 
+ 
+     if obj.to_dict() == obj1.to_dict(): 
+         fptr.write(str(obj.to_dict()) + "\n") 
+     else: 
+         fptr.write("Mixin didn't work as expected.\n") 
+
+    try: 
+         fptr.write(str(obj.to_json()) + "\n") 
+         if obj.to_json() != obj2.to_json(): 
+             fptr.write("Mixin didn't work as expected.\n") 
+     except TypeError as e: 
+         fptr.write(str(e) + "\n") 
+
+    fptr.close() 
+
+   
+
+Decorator Timing 
+
+#!/bin/python3 
+
+import math 
+import os 
+import random 
+import re 
+import sys 
+import time 
+from typing import Callable 
+
+def delay_max(*args, **kwargs): 
+     time.sleep(kwargs["delay"] / 1000) 
+     return max(args) 
+
+def delay_min(*args, **kwargs): 
+     time.sleep(kwargs["delay"] / 1000) 
+     return min(args) 
+
+def delay_sum(*args, **kwargs): 
+     time.sleep(kwargs["delay"] / 1000) 
+     return sum(args) 
+
+execution_time = [] 
+
+# 
+# Complete the 'timeit' function below. 
+# 
+# The function is expected to return a function. 
+# The function accepts following parameter: 
+#  1. FUNCTION func 
+# 
+
+def timeit(func: Callable) -> Callable: 
+     # Write your code here 
+     def wrapper(*args, **kwargs): 
+         start = time.perf_counter()  # high-resolution, monotonic clock 
+         result = func(*args, **kwargs) 
+         end = time.perf_counter() 
+ 
+         # Truncate to milliseconds to avoid rounding up due to tiny overhead. 
+         duration_ms = int((end - start) * 1000) 
+         execution_time.append(duration_ms) 
+ 
+         return result 
+     return wrapper 
+
+if __name__ == '__main__': 
+     fptr = open(os.environ['OUTPUT_PATH'], 'w') 
+
+    n = int(input().strip()) 
+
+    function_mapper = { 
+         "delay_max": delay_max, 
+         "delay_min": delay_min, 
+         "delay_sum": delay_sum, 
+     } 
+
+    for _ in range(n): 
+         row = input().rstrip().split() 
+         decorated_func = timeit(function_mapper[row[0]]) 
+         args = row[1:-1] 
+         for i in range(len(args)): 
+             args[i] = int(args[i]) 
+         fptr.write(str(decorated_func(*args, delay=int(row[-1]))) + "\n") 
+
+    error = 5 
+
+    for i in range(n): 
+         approx_execution_time = int(round(execution_time[i] / 50)) * 50 
+         if abs(execution_time[i] - approx_execution_time) > error: 
+             fptr.write("timeit didn't work as expected.\n") 
+             fptr.close() 
+             break 
+         else: 
+             execution_time[i] = approx_execution_time 
+
+    fptr.write(str(execution_time) + "\n") 
+
+    fptr.close()   
+
+ 
+
+ 
+
+Function composition 
+
+def compose(*functionsList: Callable) -> Callable: 
+
+    #write your code here 
+
+    def composed(*args): 
+
+        result= functionsList[0](*args) 
+
+        for func in functionsList[1:]: 
+
+            result = func(result) 
+
+        return result 
+
+    return composed 
+
+if __name__ == '__main__': 
+
+    fptr = open(os.environ['OUTPUT_PATH'], 'w') 
+
+    functionMapper = { 
+
+        "add": add, 
+
+        "square": square, 
+
+        "splitter": splitter, 
+
+        "my_max": my_max, 
+
+        "my_min": my_min, 
+
+    } 
+
+    functionsList_count = int(input().strip()) 
+
+    functionsList = [] 
+
+    for _ in range(functionsList_count): 
+
+        functionsList_item = input() 
+
+        functionsList.append(functionMapper[functionsList_item]) 
+
+    composedFunctions = compose(*functionsList) 
+
+    argumentsList_count = int(input().strip()) 
+
+    argumentsList = [] 
+
+    for _ in range(argumentsList_count): 
+
+        argumentsList_item = int(input().strip()) 
+
+        argumentsList.append(argumentsList_item) 
+
+    result = composedFunctions(*argumentsList) 
+
+    fptr.write(str(result) + "\n") 
+
+    fptr.close() 
+
+   
+
+Generator context 
+
+import math 
+
+import os 
+
+import random 
+
+import re 
+
+import sys 
+
+# Complete the 'sequence_generator' class below. 
+
+# The class is expected to contain the related functions of a context manager class. 
+
+class sequence_generator: 
+
+    def __init__(self,start,step): 
+
+        self.start = start 
+
+        self.step = step 
+
+    def genrate(self): 
+
+        current = self.start 
+
+        while True: 
+
+            yield current 
+
+            current += self.step 
+
+    def __enter__(self): 
+
+        return self.genrate() 
+
+    def __exit__(self,exc_type,exc_val,exc_tarceback): 
+
+        pass 
+
+if __name__ == '__main__': 
+
+    fptr = open(os.environ['OUTPUT_PATH'], 'w') 
+
+    start = int(input().strip()) 
+
+    step = int(input().strip()) 
+
+    num = int(input().strip()) 
+
+    with sequence_generator(start, step) as gen: 
+
+        for i in range(num): 
+
+            fptr.write(str(next(gen)) + '\n') 
+
+    fptr.close() 
+
+Custom method resolution 
+
+ import math 
+import os 
+import random 
+import re 
+import sys 
+result=[] 
+class Parent1: 
+     def fun1(self): 
+         print("Parent1 func1") 
+     def fun2(self): 
+         print("Parent1 func2") 
+class Parent2: 
+     def fun1(self): 
+         print("Parent2 func1") 
+     def fun2(self): 
+         print("Parent2 func2") 
+def trace_func(frame,event,arg): 
+     global result 
+     try: 
+         if not hasattr(trace_func,'counter'): 
+             trace_func.counter=0 
+     except AttributeError: 
+         pass 
+     if event=='call': 
+         co=frame.f_code 
+         func_name=co.co_name 
+         line_no=frame.f_lineno 
+         if func_name=="_remove": 
+             return trace_func 
+         if len(result)!=trace_func.counter: 
+             raise Exception("result is modified") 
+         if func_name=="fun1": 
+             trace_func.counter+=1 
+             if line_no==12: 
+                 result.append("Parent1 fun1") 
+             elif line_no==18: 
+                 result.append("parent2 fun2") 
+             else: 
+                 result.append("Child fun1") 
+         elif func_name=="fun2": 
+             trace_func.counter+=1 
+             if line_no==14: 
+                 result.append("Parent1 fun2") 
+             elif line_no==20: 
+                 result.append("Parent2 fun2") 
+             else: 
+                 result.append("Child fun2") 
+     return trace_func 
+class Child(Parent1,Parent2): 
+     def fun1(self): 
+         print("Child fun1")  #This line is optional not written also will execute  
+         Parent1.fun1(self) 
+         Parent2.fun1(self) 
+     def fun2(self): 
+         print("Child fun2") #This line is optional not written also will execute 
+         Parent2.fun2(self) 
+         Parent1.fun2(self) 
+def get_results(arr): 
+     if not (issubclass(Child,Parent1) and issubclass(Child,Parent2)): 
+         raise Exception("Child is not inherited") 
+     c=Child() 
+     for x in arr: 
+         if x==1: 
+             c.fun1() 
+         elif x==2: 
+             c.fun2() 
+     return result 
+sys.settrace(trace_func) 
+if __name__=='__main__': 
+     fptr=open("OUTPUT_TEXT_METHOD.txt",'w') 
+     arr_count=int(input().strip()) 
+     arr=[] 
+     for _ in range(arr_count): 
+         arr_item=int(input().strip()) 
+         arr.append(arr_item) 
+     result=get_results(arr) 
+     fptr.write('\n'.join(result)) 
+     fptr.write('\n') 
+     fptr.close() 
+
+Communication handler 
+
+Fixedsize warehouse 
+
+import os 
+
+class Limit: 
+
+    limit: int = 0 
+
+    @classmethod 
+
+    def set_limit(cls, x: int): 
+
+        cls.limit = x 
+
+    @classmethod 
+
+    def get_limit(cls): 
+
+        return cls.limit 
+
+class UserLimitExceeded(Exception): 
+
+    """ 
+
+    Custom exception raised when product limit is exceeded 
+
+    """ 
+
+    def __init__(self, name: str): 
+
+        msg = ( 
+
+            f"Product {name} cannot be created. " 
+
+            f"Maximum {Limit.get_limit()} products allowed" 
+
+        ) 
+
+        super().__init__(msg) 
+
+class Product: 
+
+    def __init__(self, name: str): 
+
+        self.name = name 
+
+def main(path="/dev/stdout") -> None: 
+
+    max_limit = int(input()) 
+
+    Limit.set_limit(max_limit) 
+
+    products = {} 
+
+    def new_product(product_name: str) -> str: 
+
+        if len(products) >= Limit.get_limit(): 
+
+            raise UserLimitExceeded(product_name) 
+
+        product = Product(product_name) 
+
+        products[product_name] = product 
+
+        return f"{product.name} created" 
+
+    def del_product(product_name: str) -> str: 
+
+        product = products.get(product_name, f"{product_name} not found") 
+
+        if isinstance(product, Product): 
+
+            del products[product_name] 
+
+            return f"{product_name} deleted successfully" 
+
+        raise Exception(product) 
+
+    def print_product(product_name: str) -> str: 
+
+        product = products.get(product_name, f"{product_name} not found") 
+
+        if isinstance(product, Product): 
+
+            return f"{product.name} found" 
+
+        raise Exception(product) 
+
+    def change_limit(limit: int) -> str: 
+
+        limit = int(limit) 
+
+        Limit.set_limit(limit) 
+
+        return f"limit updated to {limit}" 
+
+    func_map = { 
+
+        "new": new_product, 
+
+        "del": del_product, 
+
+        "print": print_product, 
+
+        "limit": change_limit, 
+
+    } 
+
+    num_operations = int(input()) 
+
+    for _ in range(num_operations): 
+
+        cmd, arg = input().split() 
+
+        try: 
+
+            res = func_map[cmd](arg) 
+
+            print(res) 
+
+        except UserLimitExceeded as ule: 
+
+            print(ule) 
+
+        except Exception as e: 
+
+            print(e) 
+
+if __name__ == "__main__": 
+
+    path = "/dev/stdout" 
+
+    if "OUTPUT_PATH" in os.environ.keys(): 
+
+        path = os.environ["OUTPUT_PATH"] 
+
+    main(path=path) 
+
+Non- primes generator 
+
+Remove boiler code in Hackerrank along with main method , but don’t remove the path, as sir said and write this. 
+
+def is_prime(n): 
+
+    if n <= 1: 
+
+        return False 
+
+    for i in range(2, int(n**0.5) + 1): 
+
+        if n % i == 0: 
+
+            return False 
+
+    return True 
+
+def isp(k): 
+
+    res = [] 
+
+    n = 1 
+
+    while len(res) < k: 
+
+        if not is_prime(n): 
+
+            res.append(n) 
+
+        n += 1 
+
+    return res 
+
+k = int(input().strip()) 
+
+l= isp(k) 
+
+for i in l: 
+
+    print(i) 
+
+ Task Queen 
+
+ 
+
+import json 
+
+from collections import defaultdict 
+class TaskQueue: 
+     def __init__(self): 
+         # task_id -> task info 
+         self.tasks = {} 
+         # task_id -> set of remaining dependencies 
+         self.remaining_deps = {} 
+         # task_id -> list of tasks depending on it 
+         self.dependents = defaultdict(list) 
+         # insertion order for FIFO 
+         self.order = 0 
+ 
+     def add_task(self, task_id, priority, dependencies): 
+         self.tasks[task_id] = { 
+             "priority": priority, 
+             "status": 		"pending", 
+             "order": self.order 
+         } 
+         self.order += 1 
+ 
+         self.remaining_deps[task_id] = set(dependencies) 
+ 
+         for dep in dependencies: 
+             self.dependents[dep].append(task_id) 
+ 
+     def is_ready(self, task_id): 
+         if task_id not in self.tasks: 
+             return False 
+         task = self.tasks[task_id] 
+
+ 
+         return task["status"] != "completed" and len(self.remaining_deps[task_id]) == 0 
+ 
+     def complete_task(self, task_id): 
+         if task_id not in self.tasks: 
+             return 
+ 
+         if self.tasks[task_id]["status"] == "completed": 
+             return 
+ 
+         self.tasks[task_id]["status"] = "completed" 
+ 
+         for dependent in self.dependents[task_id]: 
+             self.remaining_deps[dependent].discard(task_id) 
+ 
+     def get_next(self): 
+         ready_tasks = [ 
+             ( -info["priority"], info["order"], task_id ) 
+             for task_id, info in self.tasks.items() 
+             if self.is_ready(task_id) 
+         ] 
+ 
+         if not ready_tasks: 
+             return None 
+ 
+         ready_tasks.sort() 
+         return ready_tasks[0][2] 
+ 
+     def get_status(self, task_id): 
+         if task_id not in self.tasks: 
+             return "pending" 
+ 
+         task = self.tasks[task_id] 
+         if task["status"] == "completed": 
+             return "completed" 
+         if self.is_ready(task_id): 
+             return "ready" 
+         return "pending" 
+ 
+     def get_ready_tasks(self): 
+         ready_tasks = [ 
+             ( -info["priority"], info["order"], task_id ) 
+             for task_id, info in self.tasks.items() 
+             if self.is_ready(task_id) 
+         ] 
+ 
+         ready_tasks.sort() 
+         return [task_id for _, _, task_id in ready_tasks] 
+ 
+if __name__ == '__main__': 
+     import os 
+ 
+     # Read output path 
+     fptr = open(os.environ['OUTPUT_PATH'], 'w') 
+ 
+     # Number of operations 
+     n = int(input().strip()) 
+ 
+     queue = TaskQueue() 
+     outputs = [] 
+ 
+     for _ in range(n): 
+         line = input().strip() 
+         parts = line.split() 
+ 
+         if not parts: 
+             continue 
+ 
+         op = parts[0] 
+ 
+         if op == 'add_task': 
+             # add_task <task_id> <priority> <dependencies> 
+             task_id = parts[1] 
+             priority = int(parts[2]) 
+             dependencies_str = ' '.join(parts[3:]) 
+             dependencies = json.loads(dependencies_str) if dependencies_str else [] 
+             queue.add_task(task_id, priority, dependencies) 
+ 
+         elif op == 'is_ready': 
+             # is_ready <task_id> 
+             task_id = parts[1] 
+             result = queue.is_ready(task_id) 
+             outputs.append(str(result)) 
+ 
+         elif op == 'complete_task': 
+             # complete_task <task_id> 
+             task_id = parts[1] 
+             queue.complete_task(task_id) 
+ 
+         elif op == 'get_next': 
+             # get_next 
+             result = queue.get_next() 
+             outputs.append(str(result) if result is not None else "None") 
+ 
+         elif op == 'get_status': 
+             # get_status <task_id> 
+             task_id = parts[1] 
+             status = queue.get_status(task_id) 
+             outputs.append(status) 
+ 
+         elif op == 'get_ready_tasks': 
+             # get_ready_tasks 
+             ready = queue.get_ready_tasks() 
+             outputs.append(','.join(ready) if ready else "") 
+ 
+     # Write outputs 
+     if len(outputs) > 0: 
+         fptr.write("\n".join(outputs)) 
+ 
+     fptr.write("\n") 
+     fptr.close() 
+
+   
+
+Event Stream 
+
+from typing import List, Tuple, Set, Optional, Union, Generator, Dict 
+from collections import defaultdict, Counter 
+import json 
+
+def processEventStream( 
+     events: List[Tuple[str, int, str, str]], 
+     event_types: Optional[Set[str]] = None, 
+     window_seconds: Optional[int] = None, 
+     batch_size: Optional[int] = None 
+) -> Generator[Union[List[Tuple[str, int, str, str]], List[Dict]], None, None]: 
+     # 1. Deduplicate by event_id (keep earliest timestamp) 
+     dedup = {} 
+     for eid, ts, etype, data in events: 
+         if eid not in dedup or ts < dedup[eid][1]: 
+             dedup[eid] = (eid, ts, etype, data) 
+
+    # 2. Convert to list and filter by event_types if provided 
+     dedup_events = list(dedup.values()) 
+     if event_types: 
+         dedup_events = [e for e in dedup_events if e[2] in event_types] 
+
+    # 3. Sort by timestamp 
+     dedup_events.sort(key=lambda e: e[1]) 
+
+    # 4. If no windowing, yield events in batches 
+     if window_seconds is None: 
+         if batch_size is None: 
+             yield dedup_events 
+         else: 
+             for i in range(0, len(dedup_events), batch_size): 
+                 yield dedup_events[i:i + batch_size] 
+         return 
+
+    # 5. Group into windows 
+     windows = defaultdict(list) 
+     for eid, ts, etype, data in dedup_events: 
+         wstart = (ts // window_seconds) * window_seconds 
+         windows[wstart].append((eid, ts, etype, data)) 
+
+  
+
+    # 6. Build aggregated window info 
+     aggregated = [] 
+     for wstart in sorted(windows.keys()): 
+         evs = windows[wstart] 
+         wend = wstart + window_seconds - 1 
+         counts = Counter(e[2] for e in evs) 
+         aggregated.append({ 
+             "window_start": wstart, 
+             "window_end": wend, 
+             "event_count": len(evs), 
+             "event_types": dict(counts), 
+             "events": evs 
+         }) 
+
+    # 7. Yield windows in batches 
+     if batch_size is None: 
+         yield aggregated 
+     else: 
+         for i in range(0, len(aggregated), batch_size): 
+             yield aggregated[i:i + batch_size] 
+ 
+if __name__ == '__main__': 
+     events_str = input().strip() 
+     events = json.loads(events_str) 
+     events = [tuple(e) for e in events] 
+ 
+     event_types_str = input().strip() 
+     if event_types_str == "none": 
+         event_types = None 
+     else: 
+         event_types = set(json.loads(event_types_str)) 
+ 
+     window_seconds_str = input().strip() 
+     if window_seconds_str == "none": 
+         window_seconds = None 
+     else: 
+         window_seconds = int(window_seconds_str) 
+ 
+     batch_size_str = input().strip() 
+     if batch_size_str == "none": 
+         batch_size = None 
+     else: 
+         batch_size = int(batch_size_str) 
+ 
+     result = processEventStream(events, event_types, window_seconds, batch_size) 
+ 
+     # Result is always a generator 
+     for batch in result: 
+         if window_seconds is None: 
+             output_batch = [list(event) for event in batch] 
+         else: 
+             output_batch = [] 
+             for window in batch: 
+                 window_copy = window.copy() 
+                 window_copy['events'] = [list(e) for e in window['events']] 
+                 output_batch.append(window_copy) 
+         print(json.dumps(output_batch)) 
+
+Atomic Transaction Dictionary 
+
+#!/bin/python3 
+
+import math 
+import os 
+import random 
+import re 
+import sys 
+
+class TransactionalDict: 
+     def __init__(self): 
+         self.main = {}      # committed state 
+         self.journal = {}   # staged (uncommitted) changes 
+ 
+     def __setitem__(self, key, value): 
+         # stage changes only 
+         self.journal[key] = value 
+ 
+     def __getitem__(self, key): 
+         # only committed state is visible 
+         return self.main.get(key, None) 
+ 
+     def commit(self): 
+         # apply staged changes 
+         if self.journal: 
+             self.main.update(self.journal) 
+             self.journal.clear() 
+ 
+     def rollback(self): 
+         # discard staged changes 
+         self.journal.clear() 
+
+if __name__ == '__main__': 
+     if 'OUTPUT_PATH' not in os.environ: 
+         f = sys.stdout 
+     else: 
+         f = open(os.environ['OUTPUT_PATH'], 'w') 
+
+    Q = int(sys.stdin.readline().strip()) 
+     d = None 
+
+    for _ in range(Q): 
+         line = sys.stdin.readline() 
+         if not line: 
+             break 
+ 
+         command = tuple(line.strip().split()) 
+         cmd_type = command[0] 
+ 
+         if cmd_type == 'create': 
+             d = TransactionalDict() 
+ 
+         elif cmd_type == 'set': 
+             d[command[1]] = int(command[2]) # __setitem__ 
+ 
+         elif cmd_type == 'get': 
+             print(d[command[1]], file=f)     # __getitem__ 
+ 
+         elif cmd_type == 'commit': 
+             d.commit() 
+ 
+         elif cmd_type == 'rollback': 
+             d.rollback() 
+
+    if f is not sys.stdout: 
+         f.close() 
+
+Configurable retry manager 
+
+class APIFunctions: 
+     def __init__(self): 
+         self.sometimes_called = 0 
+
+    def sometimes_fail(self): 
+         # Pattern: Fails once, then succeeds (if retried) 
+         self.sometimes_called += 1 
+         if self.sometimes_called == 1: 
+             raise Exception("Random glitch") 
+         return "Success" 
+
+    def always_fail(self): 
+         # Always fails with error message "Simulated error", with no succeed  
+         raise Exception("Simulated error") 
+
+class RetryManager: 
+     _enabled = True 
+     @staticmethod 
+     def setEnabled(flag: bool): 
+         RetryManager._enabled = flag 
+ 
+     @staticmethod 
+     def isEnabled() -> bool: 
+         return RetryManager._enabled 
+ 
+def retryable(maxRetries: int): 
+     def decorator(func): 
+         def wrapper(*args, **kwargs): 
+             if not RetryManager.isEnabled(): 
+                 print("Retry disabled") 
+                 try: 
+                     return func(*args, **kwargs) 
+                 except Exception as e: 
+                     print(f"Attempt 1 failed: {e}") 
+                     print("ERROR: all retries failed") 
+                     return 
+ 
+             attempt = 0 
+             while attempt < maxRetries: 
+                 try: 
+                     result = func(*args, **kwargs) 
+                     print(f"Success after {attempt + 1} attempts") 
+                     return result 
+                 except Exception as e: 
+                     attempt += 1 
+                     print(f"Attempt {attempt} failed: {e}") 
+                     if attempt == maxRetries: 
+                         print("ERROR: all retries failed") 
+                         return 
+         return wrapper 
+     return decorator 
+
+# Test runner 
+def runSimulation(commands, maxRetries): 
+     for cmd in commands: 
+         parts = cmd.strip().split() 
+         if parts[0] == "CALL": 
+             api = APIFunctions()  # new object per call 
+             # dynamically wrap 
+             api.sometimes_fail = retryable(maxRetries)(api.sometimes_fail) 
+             api.always_fail = retryable(maxRetries)(api.always_fail) 
+
+            if parts[1] == "sometimes_fail": 
+                 api.sometimes_fail() 
+             elif parts[1] == "always_fail": 
+                 api.always_fail() 
+         elif parts[0] == "ENABLE": 
+             RetryManager.setEnabled(True) 
+         elif parts[0] == "DISABLE": 
+             RetryManager.setEnabled(False) 
+
+# Main execution 
+if __name__ == "__main__": 
+     n, maxRetries = map(int, input().split()) 
+     commands = [input().strip() for _ in range(n)] 
+     runSimulation(commands, maxRetries) 
+
+API Call Tracking 
+
+import functools 
+import sys 
+import inspect 
+import types 
+
+def MethodCallRecorder(cls): 
+     """ 
+     Class decorator to record method calls.     
+     Receives a class `cls`, and returns a modified version of `cls`.     
+     Adds: 
+     - getCallLog(self): Returns the log. 
+     - clearCallLog(self): Clears the log, resets counter. 
+     """ 
+ 
+     def getCallLog(self): 
+         return getattr(self , '_log' , []) 
+         pass 
+
+  
+
+    def clearCallLog(self): 
+         count = getattr(self, '_cnt', 0) 
+         self._log, self._cnt = [], 0 
+         return 'OK' 
+ 
+     # Write decorator code here   
+     for name in list(cls.__dict__): 
+         attr = getattr(cls, name) 
+         if callable(attr) and not name.startswith("__"): 
+ 
+             def make_wrapper(method_name, original_func): 
+                 def wrapper(self, *args, **kwargs): 
+                     # Initialize storage on the fly if not present 
+                     if not hasattr(self, '_log'): 
+                         self._log, self._cnt = [], 0 
+ 
+                     self._cnt += 1 
+                     self._log.append((self._cnt, method_name, args, kwargs)) 
+                     return original_func(self, *args, **kwargs) 
+                 return wrapper 
+ 
+             setattr(cls, name, make_wrapper(name, attr))             
+ 
+     setattr(cls, 'getCallLog', getCallLog) 
+     setattr(cls, 'clearCallLog', clearCallLog) 
+ 
+     return cls 
+
+@MethodCallRecorder 
+class APIMock: 
+     def __init__(self, serviceName): 
+         self.serviceName = serviceName 
+
+    def login(self, username, *args, **kwargs): pass 
+     def logout(self): pass 
+     def createUser(self, username, email, *args, **kwargs): pass 
+     def getUserDetails(self, userId, *args, **kwargs): pass 
+     def updateUserProfile(self, userId, *args, **profileData): pass 
+     def deleteResource(self, resourceType, resourceId, *args, **kwargs): pass 
+     def listResources(self, resourceType, *args, **kwargs): pass 
+     def postMessage(self, channel, messageBody, *attachments, **kwargs): pass 
+     def healthCheck(self, *args, **kwargs): pass 
+     def search(self, query, *filters, **options): pass 
+
+  
+
+    def __str__(self): 
+         return f"APIMock(service={self.serviceName})" 
+def _format_args_tuple(args_tup): 
+     """Format args tuple for output display.""" 
+     if not args_tup: 
+         return "()" 
+ 
+     parts = [f'"{str(a)}"' for a in args_tup] 
+ 
+     if len(parts) == 1: 
+         return f"({parts[0]},)" 
+     return "(" + ", ".join(parts) + ")" 
+
+def _format_kwargs_dict(kw): 
+     """Format kwargs dict for output display with alphabetically sorted keys.""" 
+     if not kw: 
+         return "{}" 
+ 
+     try: 
+         keys = sorted(kw.keys()) 
+     except Exception: 
+         keys = list(kw.keys()) 
+ 
+     parts = [] 
+     for k in keys: 
+         val = kw[k] 
+         parts.append(f'{str(k)}: "{str(val)}"') 
+ 
+     return "{" + ", ".join(parts) + "}" 
+
+def main(): 
+     execContext = {} 
+ 
+     try: 
+         n = int(sys.stdin.readline()) 
+     except: 
+         n = 0 
+ 
+     for _ in range(n): 
+         line = sys.stdin.readline().strip() 
+         if not line: 
+             continue 
+ 
+         if line.startswith("SHOW_LOG"): 
+             parts = line.split() 
+             instanceName = parts[1] 
+ 
+             if instanceName in execContext: 
+                 try: 
+                     log = execContext[instanceName].getCallLog() 
+                 except: 
+                     log = [] 
+ 
+                 if not log: 
+                     print() 
+                 else: 
+                     for record in log: 
+                         try: 
+                             t, mname, args_tup, kw = record 
+                         except: 
+                             continue 
+ 
+                         args_str = _format_args_tuple(args_tup) 
+                         kw_str = _format_kwargs_dict(kw) 
+ 
+                         print(f"{t} {mname} {args_str} {kw_str}") 
+ 
+         elif line.startswith("CLEAR_LOG"): 
+             parts = line.split() 
+             instanceName = parts[1] 
+ 
+             if instanceName in execContext: 
+                 try: 
+                     result = execContext[instanceName].clearCallLog() 
+                 except: 
+                     result = None 
+ 
+                 if result is not None: 
+                     print(result) 
+ 
+         else: 
+             try: 
+                 exec(line, globals(), execContext) 
+             except Exception as e: 
+                 print(f"Error executing line '{line}': {e}", file=sys.stderr) 
+
+if __name__ == "__main__": 
+     main() 
+
+Communications Handler 
+
+n = int(input()) 
+
+users = [input().strip() for _ in range(n)] 
+
+active = None  # stores set of 2 names 
+
+m = int(input()) 
+
+for _ in range(m): 
+
+    cmd, a, b = input().split() 
+
+    u1 = users[int(a)] 
+
+    u2 = users[int(b)] 
+
+    try: 
+
+        if cmd == "connect": 
+
+            if u1 == u2: 
+
+                raise Exception(f"{u1} cannot connect with {u2}") 
+
+            if active is not None: 
+
+                raise Exception("Connection in use. Please try later") 
+
+            active = {u1, u2} 
+
+            print("Success: Connection established between", u1, "and", u2) 
+
+        else:  # hangup 
+
+            if u1 == u2: 
+
+                raise Exception(f"{u1} cannot hangup with {u2}") 
+
+            if active == {u1, u2}: 
+
+                active = None 
+
+                print("Success:", u1, "and", u2, "are disconnected") 
+
+            else: 
+
+                raise Exception(f"{u1} and {u2} not found in the communication channel") 
+
+    except Exception as e: 
+
+        print("Error:", e) 
+
+ 
+
+RLE Decoder 
+
+import math 
+import os 
+import random 
+import re 
+import sys 
+
+class RLEDecoder: 
+     # Implement the RLEDecoder here 
+     def __init__(self, encoded_string): 
+         self._counts = {} 
+         self._length = 0 
+ 
+         i = 0 
+         n = len(encoded_string) 
+         while i < n: 
+             char = encoded_string[i] 
+             i += 1 
+ 
+             count_str = "" 
+             while i < n and encoded_string[i].isdigit(): 
+                 count_str += encoded_string[i] 
+                 i += 1 
+ 
+             count = int(count_str) 
+             self._counts[char] = self._counts.get(char, 0) + count 
+             self._length += count 
+ 
+     def __len__(self): 
+         return self._length 
+ 
+     def count(self, char): 
+         return self._counts.get(char, 0) 
+     pass 
+
+  
+
+if __name__ == '__main__': 
+     fptr = open(os.environ['OUTPUT_PATH'], 'w') 
+
+    s = input() 
+
+    decoded = RLEDecoder(s) 
+
+    q = int(input()) 
+     for _ in range(q): 
+         line = input().split() 
+         command = line[0] 
+         if command == "len": 
+             fptr.write(str(len(decoded)) + "\n") 
+         elif command == "count": 
+             c = line[1] 
+             fptr.write(str(decoded.count(c)) + "\n") 
+         else: 
+             raise ValueError("Invalid command %s" % command) 
+     fptr.close() 
+
+Fancy Tuple 
+
+import math 
+import os 
+import random 
+import re 
+import sys 
+
+ class FancyTuple: 
+     # Implement the FancyTuple here 
+     def __init__(self, *args): 
+         self.items = args 
+ 
+     def __len__(self): 
+         return len(self.items) 
+ 
+     def __getattr__(self, name): 
+         mapping = { 
+             "first": 0, 
+             "second": 1, 
+             "third": 2, 
+             "fourth": 3, 
+             "fifth": 4 
+         } 
+         if name in mapping: 
+             idx = mapping[name] 
+             if idx < len(self.items): 
+                 return self.items[idx] 
+             raise AttributeError 
+         raise AttributeError 
+     pass 
+
+if __name__ == '__main__': 
+     fptr = open(os.environ['OUTPUT_PATH'], 'w') 
+
+    n = int(input()) 
+     items = [input() for _ in range(n)] 
+
+    t = FancyTuple(*items) 
+
+    q = int(input()) 
+     for _ in range(q): 
+         command = input() 
+         if command == "len": 
+             fptr.write(str(len(t)) + "\n") 
+         else: 
+             try: 
+                 elem = getattr(t, command) 
+             except AttributeError: 
+                 fptr.write("AttributeError\n") 
+             else: 
+                 fptr.write(elem + "\n") 
+     fptr.close() 
+
+Reverse Arguments 
+
+def reversed_args(f): 
+
+    def g(*args): 
+
+        return f(*args[::-1]) 
+
+    return g 
+
+int_func_map = { 
+     'pow': pow, 
+     'cmp': lambda a, b: 0 if a == b else [1, -1][a < b], 
+} 
+
+string_func_map = { 
+     'join_with': lambda separator, *args: separator.join(args), 
+     'capitalize_first_and_join': lambda first, *args: ''.join([first.upper()] + list(args)), 
+} 
+
+queries = int(input()) 
+for _ in range(queries): 
+     line = input().split() 
+     func_name, args = line[0], line[1:] 
+     if func_name in int_func_map: 
+         args = list(map(int, args)) 
+         print(reversed_args(int_func_map[func_name])(*args)) 
+     else: 
+         print(reversed_args(string_func_map[func_name])(*args)) 
+
+   
+
+   
+
+   
+
+   
+
+   
+
+   
+
+ 
+
+ 
+
+ 
+
+ 
+
+   
